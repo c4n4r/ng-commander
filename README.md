@@ -1,6 +1,38 @@
-# NgQueue
+# NgCommander
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.13.
+
+## Libraries
+
+### ng-commander
+
+A queuing system based on RxJS that implements the command pattern. The library provides a service to queue and execute commands sequentially, with proper error handling and state management.
+
+#### Features
+
+- Command pattern implementation
+- RxJS-based queuing system
+- Sequential command execution
+- Error handling
+- State management
+
+## Sandbox Application
+
+A sandbox application is included to demonstrate the functionality of the ng-commander library. To run the sandbox:
+
+```bash
+ng serve sandbox
+```
+
+Then navigate to `http://localhost:4200/` in your browser.
+
+The sandbox demonstrates:
+- Creating and implementing commands
+- Queuing commands for execution
+- Handling successful and error commands
+- Monitoring the state of the commander service
+
+For more details, see the [Sandbox README](projects/sandbox/README.md).
 
 ## Development server
 
