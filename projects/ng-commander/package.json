@@ -1,6 +1,9 @@
 {
   "name": "ng-commander",
-  "version": "0.0.1",
+  "version": "1.0.2",
+  "description": "Command pattern for Angular applications",
+  "author": "Shifumi",
+  "license": "MIT",
   "peerDependencies": {
     "@angular/common": "^19.2.0",
     "@angular/core": "^19.2.0"
@@ -8,5 +11,19 @@
   "dependencies": {
     "tslib": "^2.3.0"
   },
-  "sideEffects": false
+  "sideEffects": false,
+  "keywords": [
+    "angular",
+    "command",
+    "pattern",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/username/ng-commander"
+  },
+  "bugs": {
+    "url": "https://github.com/username/ng-commander/issues"
+  },
+  "homepage": "https://github.com/username/ng-commander#readme"
 }
