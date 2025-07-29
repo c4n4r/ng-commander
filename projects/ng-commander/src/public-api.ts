@@ -3,4 +3,5 @@
  */
 
 export * from './Application/commander.service';
+export * from './Application/commander.service.configuration';
 export * from './Domain/command.interface';

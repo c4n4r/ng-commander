@@ -10,6 +10,11 @@ describe('commander service tests', () => {
       providers: [Commander],
     });
     commander = TestBed.inject(Commander);
+    commander.init({
+      error: {
+        maxNumberOfRetries: 3,
+      },
+    });
   });
 
   it('should be created', () => {
@@ -160,11 +165,11 @@ describe('commander service tests', () => {
               setTimeout(() => {
                 reject('test error');
               }, 1000);
-            })
+            });
           })
-        )
-      }
-    }
+        );
+      },
+    };
     commander.addCommand(command);
     tick(2000);
     expect(commander.getCommands(CommandsType.ERROR).length).toBe(1);
@@ -174,6 +179,36 @@ describe('commander service tests', () => {
     expect(commander.getState()).toBe(CommanderState.EXECUTING);
     tick(2000);
     expect(commander.getCommands(CommandsType.ERROR).length).toBe(1);
-  }))
+  }));
 
+  it('should stop replaying commands in error after 3 attempts', fakeAsync(() => {
+    const errorCommand: Command<string> = {
+      id: 'error-1',
+      execute: () => {
+        return new BehaviorSubject('').pipe(
+          concatMap(() => {
+            return new Promise<string>((resolve, reject) => {
+              setTimeout(() => {
+                reject('test error');
+              }, 1000);
+            });
+          })
+        );
+      },
+    };
+
+    commander.addCommand(errorCommand);
+    tick(2000);
+    expect(commander.getCommands(CommandsType.ERROR).length).toBe(1);
+    commander.replayCommandsInError();
+    tick(2000);
+    expect(commander.getCommands(CommandsType.ERROR).length).toBe(1);
+    commander.replayCommandsInError();
+    tick(2000);
+    expect(commander.getCommands(CommandsType.ERROR).length).toBe(1);
+    commander.replayCommandsInError();
+    tick(2000);
+    expect(commander.getCommands(CommandsType.ERROR).length).toBe(0);
+    expect(commander.getCommands(CommandsType.DEAD).length).toBe(1);
+  }));
 });
