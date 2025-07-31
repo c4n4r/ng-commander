@@ -1,6 +1,6 @@
 {
   "name": "ng-commander",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "author": "Shifumi",
   "description": "Command pattern for Angular applications",
   "license": "MIT",
