@@ -20,10 +20,10 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/username/ng-commander"
+    "url": "https://github.com/c4n4r/ng-commander"
   },
   "bugs": {
-    "url": "https://github.com/username/ng-commander/issues"
+    "url": "https://github.com/c4n4r/ng-commander/issues"
   },
-  "homepage": "https://github.com/username/ng-commander#readme"
+  "homepage": "https://github.com/c4n4r/ng-commander#readme"
 }
