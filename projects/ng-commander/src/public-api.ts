@@ -2,7 +2,7 @@
  * Public API Surface of ng-commander
  */
 
-export * from './Application/commander.service';
-export * from './Application/commander.service.configuration';
-export * from './Domain/command-event.interface';
-export * from './Domain/command.interface';
+export { default as Commander } from './Application/commander.service';
+export type * from './Application/commander.service.configuration';
+export type * from './Domain/command-event.interface';
+export type { default as Command } from './Domain/command.interface';

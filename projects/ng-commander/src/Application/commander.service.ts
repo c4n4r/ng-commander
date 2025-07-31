@@ -142,11 +142,13 @@ export default class Commander {
           ...this.commandsDeadSubject.value,
           command,
         ]);
-
-        // remove from errors
         this.commandsInErrorSubject.next(inError.filter((c) => c !== command));
       }
     });
+  }
+
+  flushDeadCommands() {
+    this.commandsDeadSubject.next([]);
   }
 
   getCommands(type: CommandsType): Command<any>[] {
