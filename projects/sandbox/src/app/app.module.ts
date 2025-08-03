@@ -1,17 +1,13 @@
+import { JsonPipe } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+import { Commander } from '../../../ng-commander/src/Application/commander.service';
 import { AppComponent } from './app.component';
-import Commander from '../../../ng-commander/src/Application/commander.service';
 
 @NgModule({
-  declarations: [
-
-  ],
-  imports: [
-    BrowserModule,
-    AppComponent
-  ],
-  providers: [Commander],
-  bootstrap: [AppComponent]
+  declarations: [AppComponent],
+  imports: [BrowserModule],
+  providers: [Commander, JsonPipe],
+  bootstrap: [AppComponent],
 })
-export class AppModule { }
+export class AppModule {}

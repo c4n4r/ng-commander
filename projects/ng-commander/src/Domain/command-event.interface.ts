@@ -10,6 +10,9 @@ export enum CommandEventType {
 export interface CommandEvent {
   type: CommandEventType;
   timestamp: Date;
-  command: Command<any>;
+  command: Command;
   data?: any;
 }
+
+// Signal types for Angular 18+ compatibility
+export type CommandEventSignal = CommandEvent;

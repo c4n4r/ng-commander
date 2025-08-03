@@ -1,8 +1,8 @@
 import { Observable } from 'rxjs';
 import { CommandEvent } from './command-event.interface';
 
-export default interface Command<C> {
+export default interface Command {
   id: string;
-  execute(): Observable<C>;
+  execute(): Observable<any>;
   events?: CommandEvent[];
 }

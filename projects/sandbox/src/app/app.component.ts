@@ -1,13 +1,11 @@
-import { NgForOf } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { delay, Observable, of, Subscription } from 'rxjs';
-import Commander, {
-  CommanderState,
-} from '../../../ng-commander/src/Application/commander.service';
+import { CommanderState } from '../../../ng-commander/src/Application/commander.service.configuration';
 import Command from '../../../ng-commander/src/Domain/command.interface';
+import { Commander } from '../../../ng-commander/src/public-api';
 
 // Sample command implementation
-class SampleCommand implements Command<string> {
+class SampleCommand implements Command {
   id: string;
 
   constructor(id: string) {
@@ -21,7 +19,7 @@ class SampleCommand implements Command<string> {
 }
 
 // Sample error command
-class ErrorCommand implements Command<string> {
+class ErrorCommand implements Command {
   id: string;
 
   constructor(id: string) {
@@ -39,15 +37,15 @@ class ErrorCommand implements Command<string> {
 }
 
 @Component({
-  standalone: true,
+  standalone: false,
   selector: 'app-root',
-  imports: [NgForOf],
   template: `
     <div>
       <h1>Commander Service Sandbox</h1>
 
       <div>
         <h2>Current State: {{ getStateText() }}</h2>
+        <p>Signal state: {{ stateSignal() | json }}</p>
 
         <button (click)="addCommand()">Add Command</button>
         <button (click)="addErrorCommand()">Add Error Command</button>
@@ -83,10 +81,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private subscriptions = new Subscription();
 
   // Local state
-  waitingCommands: Command<any>[] = [];
-  doneCommands: Command<any>[] = [];
-  errorCommands: Command<any>[] = [];
-  deadCommands: Command<any>[] = [];
+  waitingCommands: Command[] = [];
+  doneCommands: Command[] = [];
+  errorCommands: Command[] = [];
+  deadCommands: Command[] = [];
   currentState: CommanderState = CommanderState.IDLE;
 
   constructor(private commander: Commander) {}
@@ -100,32 +98,32 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Subscribe to changes
     this.subscriptions.add(
-      this.commander.commands$.subscribe((commands) => {
+      this.commander.commands$.subscribe((commands: Command[]) => {
         this.waitingCommands = commands;
       })
     );
 
     this.subscriptions.add(
-      this.commander.commandsDone$.subscribe((commands) => {
+      this.commander.commandsDone$.subscribe((commands: Command[]) => {
         console.log('commands done', commands);
         this.doneCommands = commands;
       })
     );
 
     this.subscriptions.add(
-      this.commander.commandsInError$.subscribe((commands) => {
+      this.commander.commandsInError$.subscribe((commands: Command[]) => {
         this.errorCommands = commands;
       })
     );
 
     this.subscriptions.add(
-      this.commander.state$.subscribe((state) => {
+      this.commander.state$.subscribe((state: CommanderState) => {
         this.currentState = state;
       })
     );
 
     this.subscriptions.add(
-      this.commander.commandsDead$.subscribe((commands) => {
+      this.commander.commandsDead$.subscribe((commands: Command[]) => {
         this.deadCommands = commands;
       })
     );
@@ -155,19 +153,23 @@ export class AppComponent implements OnInit, OnDestroy {
     return CommanderState[this.currentState];
   }
 
-  getWaitingCommands(): Command<any>[] {
+  stateSignal() {
+    return this.commander.stateSignal();
+  }
+
+  getWaitingCommands(): Command[] {
     return this.waitingCommands;
   }
 
-  getDoneCommands(): Command<any>[] {
+  getDoneCommands(): Command[] {
     return this.doneCommands;
   }
 
-  getErrorCommands(): Command<any>[] {
+  getErrorCommands(): Command[] {
     return this.errorCommands;
   }
 
-  getDeadCommands(): Command<any>[] {
+  getDeadCommands(): Command[] {
     return this.deadCommands;
   }
 }

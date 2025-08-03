@@ -1,5 +1,12 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, catchError, concatMap, Subject } from 'rxjs';
+import { computed, Injectable, OnDestroy } from '@angular/core';
+import {
+  BehaviorSubject,
+  catchError,
+  EMPTY,
+  finalize,
+  Subject,
+  switchMap,
+} from 'rxjs';
 import {
   CommandEvent,
   CommandEventType,
@@ -24,24 +31,27 @@ export enum CommandsType {
 @Injectable({
   providedIn: 'root',
 })
-export default class Commander {
+export class Commander implements OnDestroy {
   private configuration: CommanderConfiguration = {
     error: {
       maxNumberOfRetries: 3,
     },
   };
-  private commandsSubject = new BehaviorSubject<Command<any>[]>([]);
-  private commandsDoneSubject = new BehaviorSubject<Command<any>[]>([]);
-  private commandsInErrorSubject = new BehaviorSubject<Command<any>[]>([]);
-  private commandsDeadSubject = new BehaviorSubject<Command<any>[]>([]);
+
+  private commandsSubject = new BehaviorSubject<Command[]>([]);
+  private commandsDoneSubject = new BehaviorSubject<Command[]>([]);
+  private commandsInErrorSubject = new BehaviorSubject<Command[]>([]);
+  private commandsDeadSubject = new BehaviorSubject<Command[]>([]);
   private stateSubject = new BehaviorSubject<CommanderState>(
     CommanderState.IDLE
   );
 
   private processingCommand = new Subject<{
-    command: Command<any>;
+    command: Command;
     result: any;
   }>();
+
+  private destroy$ = new Subject<void>();
 
   public commands$ = this.commandsSubject.asObservable();
   public commandsDone$ = this.commandsDoneSubject.asObservable();
@@ -49,7 +59,21 @@ export default class Commander {
   public commandsDead$ = this.commandsDeadSubject.asObservable();
   public state$ = this.stateSubject.asObservable();
 
+  // Signal properties for Angular 18+ compatibility
+  public commandsSignal = computed(() => this.commandsSubject.value);
+  public commandsDoneSignal = computed(() => this.commandsDoneSubject.value);
+  public commandsInErrorSignal = computed(
+    () => this.commandsInErrorSubject.value
+  );
+  public commandsDeadSignal = computed(() => this.commandsDeadSubject.value);
+  public stateSignal = computed(() => this.stateSubject.value);
+
   constructor() {}
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   init(configuration: CommanderConfiguration) {
     this.configuration = configuration;
@@ -59,63 +83,92 @@ export default class Commander {
   private startCommander() {
     this.processingCommand
       .pipe(
-        concatMap(({ command }) => {
+        switchMap(({ command }) => {
+          // Update state to executing before starting execution
           this.stateSubject.next(CommanderState.EXECUTING);
+
           return command.execute().pipe(
-            concatMap((result) => {
-              return [{ command, result, isError: false }];
+            // Handle successful execution
+            switchMap((result) => {
+              return this.handleSuccessfulCommand(command, result);
             }),
+            // Handle errors with retry logic
             catchError((error) => {
-              return [{ command, error, isError: true }];
+              return this.handleFailedCommand(command, error);
+            }),
+            // Finalize to ensure cleanup
+            finalize(() => {
+              this.executeNextCommand();
             })
           );
+        }),
+        // Complete the stream when destroy$ emits
+        finalize(() => {
+          this.stateSubject.complete();
         })
       )
       .subscribe({
-        next: (data) => {
-          if (data.isError) {
-            this.stateSubject.next(CommanderState.ERROR);
-            const currentErrors = this.commandsInErrorSubject.value;
-            this.declareEventOnCommand(data.command, CommandEventType.FAIL);
-            this.commandsInErrorSubject.next([...currentErrors, data.command]);
-          } else {
-            this.stateSubject.next(CommanderState.DONE);
-            const currentDone = this.commandsDoneSubject.value;
-            this.declareEventOnCommand(data.command, CommandEventType.SUCCESS);
-            this.commandsDoneSubject.next([...currentDone, data.command]);
-          }
-          this.trashDeadCommands();
-
-          this.executeNextCommand();
-        },
-        error: (errorObj) => {
+        error: (error) => {
+          console.error('Commander error:', error);
           this.stateSubject.next(CommanderState.ERROR);
-          this.executeNextCommand();
         },
       });
   }
 
-  private declareEventOnCommand(
-    command: Command<any>,
-    type: CommandEventType
-  ): void {
+  private handleSuccessfulCommand(command: Command, result: any) {
     const event: CommandEvent = {
-      type,
+      type: CommandEventType.SUCCESS,
       timestamp: new Date(),
       command: command,
     };
+
     if (!command.events) command.events = [];
     command.events.push(event);
+
+    const currentDone = this.commandsDoneSubject.value;
+    this.commandsDoneSubject.next([...currentDone, command]);
+
+    // Update state to DONE only if there are no more commands
+    this.stateSubject.next(
+      this.commandsSubject.value.length > 0
+        ? CommanderState.EXECUTING
+        : CommanderState.DONE
+    );
+
+    return EMPTY;
   }
 
+  private handleFailedCommand(command: Command, error: any) {
+    const event: CommandEvent = {
+      type: CommandEventType.FAIL,
+      timestamp: new Date(),
+      command: command,
+    };
+
+    if (!command.events) command.events = [];
+    command.events.push(event);
+
+    const currentErrors = this.commandsInErrorSubject.value;
+    this.commandsInErrorSubject.next([...currentErrors, command]);
+
+    // Check if we should mark as dead
+    this.trashDeadCommands();
+
+    return EMPTY;
+  }
   stop() {
     this.stateSubject.complete();
   }
 
-  addCommand<C>(command: Command<C>) {
+  addCommand(command: Command) {
     const currentCommands = this.commandsSubject.value;
     this.commandsSubject.next([...currentCommands, command]);
-    if (currentCommands.length === 0) {
+
+    // Start processing if this is the first command
+    if (
+      currentCommands.length === 0 &&
+      this.stateSubject.value === CommanderState.IDLE
+    ) {
       this.executeNextCommand();
     }
   }
@@ -123,35 +176,65 @@ export default class Commander {
   replayCommandsInError() {
     const commandsInError = this.commandsInErrorSubject.value;
     this.commandsInErrorSubject.next([]);
+
     if (commandsInError.length > 0) {
       this.commandsSubject.next(commandsInError);
-      this.executeNextCommand();
+
+      // Only start execution if not already executing
+      if (this.stateSubject.value === CommanderState.IDLE) {
+        this.executeNextCommand();
+      }
     }
   }
 
   private trashDeadCommands() {
     const inError = this.commandsInErrorSubject.value;
+
+    // Check for commands that have exceeded max retries
+    const deadCommands: Command[] = [];
+    const remainingCommands: Command[] = [];
+
     inError.forEach((command) => {
       const events = command.events;
-      if (
-        events &&
-        events.length > this.configuration.error.maxNumberOfRetries
-      ) {
-        this.declareEventOnCommand(command, CommandEventType.DEAD);
-        this.commandsDeadSubject.next([
-          ...this.commandsDeadSubject.value,
-          command,
-        ]);
-        this.commandsInErrorSubject.next(inError.filter((c) => c !== command));
+
+      // Count failure events (excluding restarts if they exist)
+      const failCount =
+        events?.filter((e) => e.type === CommandEventType.FAIL).length || 0;
+
+      if (events && failCount > this.configuration.error.maxNumberOfRetries) {
+        // Mark as dead
+        const event: CommandEvent = {
+          type: CommandEventType.DEAD,
+          timestamp: new Date(),
+          command: command,
+        };
+
+        if (!command.events) command.events = [];
+        command.events.push(event);
+
+        deadCommands.push(command);
+      } else {
+        remainingCommands.push(command);
       }
     });
+
+    if (deadCommands.length > 0) {
+      this.commandsDeadSubject.next([
+        ...this.commandsDeadSubject.value,
+        ...deadCommands,
+      ]);
+    }
+
+    if (remainingCommands.length !== inError.length) {
+      this.commandsInErrorSubject.next(remainingCommands);
+    }
   }
 
   flushDeadCommands() {
     this.commandsDeadSubject.next([]);
   }
 
-  getCommands(type: CommandsType): Command<any>[] {
+  getCommands(type: CommandsType): Command[] {
     switch (type) {
       case CommandsType.WAITING:
         return this.commandsSubject.value;
@@ -170,12 +253,20 @@ export default class Commander {
 
   private executeNextCommand() {
     const currentCommands = this.commandsSubject.value;
+
     if (currentCommands.length > 0) {
       const [command, ...rest] = currentCommands;
       this.commandsSubject.next(rest);
-      this.stateSubject.next(CommanderState.EXECUTING);
+
+      // Update state to EXECUTING
+      if (this.stateSubject.value !== CommanderState.EXECUTING) {
+        this.stateSubject.next(CommanderState.EXECUTING);
+      }
+
+      // Process the command
       this.processingCommand.next({ command, result: null });
     } else {
+      // No more commands, set to IDLE
       this.stateSubject.next(CommanderState.IDLE);
     }
   }
