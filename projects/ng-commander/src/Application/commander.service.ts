@@ -43,7 +43,7 @@ export class Commander implements OnDestroy {
   private commandsInErrorSubject = new BehaviorSubject<Command[]>([]);
   private commandsDeadSubject = new BehaviorSubject<Command[]>([]);
   private stateSubject = new BehaviorSubject<CommanderState>(
-    CommanderState.IDLE
+    CommanderState.IDLE,
   );
 
   private processingCommand = new Subject<{
@@ -63,7 +63,7 @@ export class Commander implements OnDestroy {
   public commandsSignal = computed(() => this.commandsSubject.value);
   public commandsDoneSignal = computed(() => this.commandsDoneSubject.value);
   public commandsInErrorSignal = computed(
-    () => this.commandsInErrorSubject.value
+    () => this.commandsInErrorSubject.value,
   );
   public commandsDeadSignal = computed(() => this.commandsDeadSubject.value);
   public stateSignal = computed(() => this.stateSubject.value);
@@ -99,13 +99,13 @@ export class Commander implements OnDestroy {
             // Finalize to ensure cleanup
             finalize(() => {
               this.executeNextCommand();
-            })
+            }),
           );
         }),
         // Complete the stream when destroy$ emits
         finalize(() => {
           this.stateSubject.complete();
-        })
+        }),
       )
       .subscribe({
         error: (error) => {
@@ -132,7 +132,7 @@ export class Commander implements OnDestroy {
     this.stateSubject.next(
       this.commandsSubject.value.length > 0
         ? CommanderState.EXECUTING
-        : CommanderState.DONE
+        : CommanderState.DONE,
     );
 
     return EMPTY;

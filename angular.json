@@ -3,39 +3,6 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "ng-queue": {
-      "projectType": "library",
-      "root": "projects/ng-queue",
-      "sourceRoot": "projects/ng-queue/src",
-      "prefix": "lib",
-      "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-angular:ng-packagr",
-          "options": {
-            "project": "projects/ng-queue/ng-package.json"
-          },
-          "configurations": {
-            "production": {
-              "tsConfig": "projects/ng-queue/tsconfig.lib.prod.json"
-            },
-            "development": {
-              "tsConfig": "projects/ng-queue/tsconfig.lib.json"
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "tsConfig": "projects/ng-queue/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
-          }
-        }
-      }
-    },
     "ng-commander": {
       "projectType": "library",
       "root": "projects/ng-commander",
@@ -61,10 +28,7 @@
           "builder": "@angular-devkit/build-angular:karma",
           "options": {
             "tsConfig": "projects/ng-commander/tsconfig.spec.json",
-            "polyfills": [
-              "zone.js",
-              "zone.js/testing"
-            ]
+            "polyfills": ["zone.js", "zone.js/testing"]
           }
         }
       }
@@ -81,16 +45,10 @@
             "outputPath": "dist/sandbox",
             "index": "projects/sandbox/src/index.html",
             "main": "projects/sandbox/src/main.ts",
-            "polyfills": [
-              "zone.js"
-            ],
+            "polyfills": ["zone.js"],
             "tsConfig": "projects/sandbox/tsconfig.app.json",
-            "assets": [
-              "projects/sandbox/src/assets"
-            ],
-            "styles": [
-              "projects/sandbox/src/styles.css"
-            ],
+            "assets": ["projects/sandbox/src/assets"],
+            "styles": ["projects/sandbox/src/styles.css"],
             "scripts": []
           },
           "configurations": {
@@ -134,5 +92,8 @@
         }
       }
     }
+  },
+  "cli": {
+    "analytics": "ed31d17b-82bf-498e-9e64-23ff120988f1"
   }
 }

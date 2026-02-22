@@ -1,12 +1,12 @@
 {
   "name": "ng-commander",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "Command pattern for Angular applications",
   "author": "Shifumi",
   "license": "MIT",
   "peerDependencies": {
-    "@angular/common": "^19.2.0",
-    "@angular/core": "^19.2.0"
+    "@angular/common": ">=20.0.0",
+    "@angular/core": ">=20.0.0"
   },
   "dependencies": {
     "tslib": "^2.3.0"

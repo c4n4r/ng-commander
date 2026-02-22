@@ -1,6 +1,6 @@
 # NgCommander
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.2.13.
+This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.
 
 ## Libraries
 
@@ -27,6 +27,7 @@ ng serve sandbox
 Then navigate to `http://localhost:4200/` in your browser.
 
 The sandbox demonstrates:
+
 - Creating and implementing commands
 - Queuing commands for execution
 - Handling successful and error commands
