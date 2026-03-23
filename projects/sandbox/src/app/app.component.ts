@@ -36,6 +36,30 @@ class ErrorCommand implements Command {
   }
 }
 
+// Sample command that fails once and succeeds the second time
+class FlakyCommand implements Command {
+  id: string;
+  private failOnce = true;
+
+  constructor(id: string) {
+    this.id = id;
+  }
+
+  execute(): Observable<string> {
+    return new Observable((subscriber) => {
+      setTimeout(() => {
+        if (this.failOnce) {
+          this.failOnce = false;
+          subscriber.error(new Error(`Temporary error in command ${this.id}`));
+        } else {
+          subscriber.next(`Success after retry for ${this.id}`);
+          subscriber.complete();
+        }
+      }, 1000);
+    });
+  }
+}
+
 @Component({
   standalone: false,
   selector: 'app-root',
@@ -49,6 +73,7 @@ class ErrorCommand implements Command {
 
         <button (click)="addCommand()">Add Command</button>
         <button (click)="addErrorCommand()">Add Error Command</button>
+        <button (click)="addFlakyCommand()">Add Flaky Command</button>
         <button (click)="replayCommandsInError()">
           Replay Commands in Error Queue
         </button>
@@ -146,6 +171,12 @@ export class AppComponent implements OnInit, OnDestroy {
   addErrorCommand() {
     this.commandCounter++;
     const command = new ErrorCommand(`err-${this.commandCounter}`);
+    this.commander.addCommand(command);
+  }
+
+  addFlakyCommand() {
+    this.commandCounter++;
+    const command = new FlakyCommand(`flaky-${this.commandCounter}`);
     this.commander.addCommand(command);
   }
 

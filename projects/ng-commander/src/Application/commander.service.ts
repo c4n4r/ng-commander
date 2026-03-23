@@ -125,6 +125,10 @@ export class Commander implements OnDestroy {
     if (!command.events) command.events = [];
     command.events.push(event);
 
+
+    const currentErrors = this.commandsInErrorSubject.value;
+    this.commandsInErrorSubject.next(currentErrors.filter(c => c !== command));
+
     const currentDone = this.commandsDoneSubject.value;
     this.commandsDoneSubject.next([...currentDone, command]);
 
